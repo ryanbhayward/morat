@@ -24,7 +24,132 @@ void test_game(Board b, std::vector<std::string> moves, Outcome outcome) {
 	}
 }
 
-TEST_CASE("Rex::Board", "[rex][board]") {
+TEST_CASE("Rex::Board size 3", "[rex][board]") {
+	Board b(3);
+
+	SECTION("Basics") {
+		REQUIRE(b.get_size() == 3);
+		REQUIRE(b.movesremain() == 9);
+	}
+
+	SECTION("valid moves") {
+		std::string valid[] = {
+		"A1", "A2", "A3",
+		  "B1", "B2", "B3",
+		    "C1", "C2", "C3",
+		"a1", "a2", "a3",
+		  "b1", "b2", "b3",
+		    "c1", "c2", "c3"
+		};
+		for(auto m : valid){
+			REQUIRE(b.onboard(m));
+			REQUIRE(b.valid_move(m));
+		}
+	}
+
+	SECTION("invalid moves") {
+		std::string invalid[] = {"a0", "a4", "b0", "b4", "c0", "c4", "d0", "d1", "d2", "d3", "d4"};
+		for(auto m : invalid){
+			REQUIRE_FALSE(b.onboard(m));
+			REQUIRE_FALSE(b.valid_move(m));
+		}
+	}
+
+	SECTION("duplicate moves") {
+		Move m("a1");
+		REQUIRE(b.valid_move(m));
+		REQUIRE(b.move(m));
+		REQUIRE_FALSE(b.valid_move(m));
+		REQUIRE_FALSE(b.move(m));
+	}
+
+	SECTION("move distance") {
+		SECTION("x") {
+			REQUIRE(b.dist(Move("c3"), Move("c2")) == 1);
+			REQUIRE(b.dist(Move("b2"), Move("b1")) == 1);
+			REQUIRE(b.dist(Move("a1"), Move("a2")) == 1);
+		}
+		SECTION("y") {
+			REQUIRE(b.dist(Move("c3"), Move("b3")) == 1);
+			REQUIRE(b.dist(Move("b2"), Move("a2")) == 1);
+			REQUIRE(b.dist(Move("a1"), Move("b1")) == 1);
+		}
+		SECTION("z") {
+			REQUIRE(b.dist(Move("a2"), Move("b1")) == 1);
+			REQUIRE(b.dist(Move("a3"), Move("b2")) == 1);
+			REQUIRE(b.dist(Move("b2"), Move("c1")) == 1);
+			REQUIRE(b.dist(Move("b3"), Move("c2")) == 1);
+		}
+		SECTION("farther") {
+			REQUIRE(b.dist(Move("a1"), Move("b2")) == 2);
+			REQUIRE(b.dist(Move("a2"), Move("b3")) == 2);
+			REQUIRE(b.dist(Move("b1"), Move("c2")) == 2);
+			REQUIRE(b.dist(Move("b2"), Move("c3")) == 2);
+			REQUIRE(b.dist(Move("a1"), Move("c1")) == 2);
+			REQUIRE(b.dist(Move("a2"), Move("c1")) == 2);
+			REQUIRE(b.dist(Move("a3"), Move("c1")) == 2);
+			REQUIRE(b.dist(Move("a1"), Move("b3")) == 3);
+			REQUIRE(b.dist(Move("a1"), Move("c3")) == 4);
+		}
+	}
+
+	SECTION("Unknown_1") {
+		test_game(b, {"a1", "a2", "a3", "b1", "b2", "b3"}, Outcome::UNKNOWN);
+		test_game(b, {"a1", "a2", "a3", "c1", "c2", "c3"}, Outcome::UNKNOWN);
+		test_game(b, {"b1", "b2", "b3", "c1", "c2", "c3"}, Outcome::UNKNOWN);
+		test_game(b, {"a1", "a2", "b3", "c1", "c2", "c3"}, Outcome::UNKNOWN);
+		test_game(b, {"a1", "a2", "a3", "b1", "b2", "c3"}, Outcome::UNKNOWN);
+		test_game(b, {"a1", "b2", "b3", "c1", "c2", "c3"}, Outcome::UNKNOWN);
+		test_game(b, {"a1", "a2", "a3", "b1", "c2", "c3"}, Outcome::UNKNOWN);
+		test_game(b, {"a1", "a2", "b1", "b3", "c2", "c3"}, Outcome::UNKNOWN);
+		test_game(b, {"a1", "a2", "a3", "b3", "c1"}, Outcome::UNKNOWN);
+		test_game(b, {"a3", "b1", "c1", "c2", "c3"}, Outcome::UNKNOWN);
+		test_game(b, {"a3", "b1", "b3", "c3"}, Outcome::UNKNOWN);
+	}
+
+	SECTION("Unknown_2") {
+		test_game(b, {"a1", "b1", "c1", "a2", "b2", "c2"}, Outcome::UNKNOWN);
+		test_game(b, {"a1", "b1", "c1", "a3", "b3", "c3"}, Outcome::UNKNOWN);
+		test_game(b, {"a2", "b2", "c2", "a3", "b3", "c3"}, Outcome::UNKNOWN);
+		test_game(b, {"a1", "b1", "c2", "a3", "b3", "c3"}, Outcome::UNKNOWN);
+		test_game(b, {"a1", "b1", "c1", "a2", "b2", "c3"}, Outcome::UNKNOWN);
+		test_game(b, {"a1", "b2", "c2", "a3", "b3", "c3"}, Outcome::UNKNOWN);
+		test_game(b, {"a1", "b1", "c1", "a2", "b3", "c3"}, Outcome::UNKNOWN);
+		test_game(b, {"a1", "b1", "a2", "c2", "b3", "c3"}, Outcome::UNKNOWN);
+		test_game(b, {"a1", "b1", "c1", "c2", "a3"}, Outcome::UNKNOWN);
+		test_game(b, {"c1", "a2", "a3", "b3", "c3"}, Outcome::UNKNOWN);
+		test_game(b, {"c1", "a2", "c2", "c3"}, Outcome::UNKNOWN);
+	}
+
+	SECTION("White Connects") {  /* Rex: Black==P2 wins */
+		test_game(b, {"a1", "b1", "a2", "b2", "a3"}, Outcome::P2); 
+		test_game(b, {"b1", "a1", "b2", "a2", "b3"}, Outcome::P2); 
+		test_game(b, {"c1", "a1", "c2", "a2", "c3"}, Outcome::P2); 
+		test_game(b, {"b1", "a1", "b2", "a2", "a3"}, Outcome::P2); 
+		test_game(b, {"c1", "a1", "c2", "a2", "b3"}, Outcome::P2); 
+		test_game(b, {"b1", "c1", "a2", "c2", "a3"}, Outcome::P2); 
+		test_game(b, {"c1", "a1", "b2", "a2", "b3"}, Outcome::P2); 
+		test_game(b, {"c1", "a1", "b2", "b1", "a3"}, Outcome::P2); 
+		test_game(b, {"a1", "c1", "a2", "c2", "b2", "c3", "b3"}, Outcome::P2); 
+		test_game(b, {"b1", "a1", "b2", "a2", "c2", "a3", "c3"}, Outcome::P2); 
+		test_game(b, {"a1", "a3", "a2", "b1", "b2", "b3", "c2", "c1", "c3"}, Outcome::P2); 
+	}
+	
+	SECTION("Black Connects") {  /* Rex: White==P1 wins */
+		test_game(b, {"a2", "a1", "b2", "b1", "c2", "c1"}, Outcome::P1); 
+		test_game(b, {"a1", "a2", "a3", "b2", "b1", "c2"}, Outcome::P1); 
+		test_game(b, {"a1", "a3", "a2", "b3", "b1", "c3"}, Outcome::P1); 
+		test_game(b, {"a1", "a2", "a3", "b1", "b2", "c1"}, Outcome::P1); 
+		test_game(b, {"a1", "a3", "a2", "b2", "b1", "c2"}, Outcome::P1); 
+		test_game(b, {"a1", "a2", "a3", "b2", "b1", "c1"}, Outcome::P1); 
+		test_game(b, {"a1", "a3", "a2", "b3", "b1", "c2"}, Outcome::P1); 
+		test_game(b, {"a1", "a3", "a2", "b2", "b1", "c1"}, Outcome::P1); 
+		test_game(b, {"a2", "a1", "a3", "b1", "b3", "b2", "c1", "c2"}, Outcome::P1); 
+		test_game(b, {"a1", "a2", "a3", "b2", "b1", "b3", "c1", "c3"}, Outcome::P1); 
+	}
+}
+
+TEST_CASE("Rex::Board size 7", "[rex][board]") {
 	Board b(7);
 
 	SECTION("Basics") {
